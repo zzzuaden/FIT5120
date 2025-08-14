@@ -15,6 +15,24 @@ const { fetchLiveSensors, fetchEventsHourlyCounts } = require('./lib/opendatasof
 const app = express();
 const PORT = process.env.PORT || 4000;
 app.use(cors());
+// 顶部：如果还没有就加
+const path = require('path');
+
+// ====== 静态文件托管（指向 sibling 的 frontend/）======
+const FRONT_DIR = path.join(__dirname, '..', 'frontend');
+app.use(express.static(FRONT_DIR));
+
+// 可选：健康检查，方便 Render 看存活
+app.get('/api/health', (_req, res) => res.json({ ok: true }));
+
+// ====== SPA 兜底 - 除了 /api 开头，其它路径都回到 index.html ======
+app.get(/^\/(?!api).*/, (req, res) => {
+  res.sendFile(path.join(FRONT_DIR, 'index.html'));
+});
+
+// 监听端口要用 Render 注入的 PORT
+const PORT = process.env.PORT || 3000;
+app.listen(PORT, '0.0.0.0', () => console.log('listening:', PORT));
 
 // --- In-memory hourly z per parking area (fallback when EVENTS_DATASET_ID has no usable data)
 const AREA_HOURLY = new Map(); // key: areaId -> Map(tsISO -> { ts, free, occ, total, n })
